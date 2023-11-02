@@ -8,11 +8,11 @@
 function header_info {
   clear
   cat <<"EOF"
-    __  __                        ___              _      __              __     ____  _____
-   / / / /___  ____ ___  ___     /   |  __________(_)____/ /_____ _____  / /_   / __ \/ ___/
-  / /_/ / __ \/ __ `__ \/ _ \   / /| | / ___/ ___/ / ___/ __/ __ `/ __ \/ __/  / / / /\__ \
- / __  / /_/ / / / / / /  __/  / ___ |(__  |__  ) (__  ) /_/ /_/ / / / / /_   / /_/ /___/ /
-/_/ /_/\____/_/ /_/ /_/\___/  /_/  |_/____/____/_/____/\__/\__,_/_/ /_/\__/   \____//____/
+    ____       __    _                ______
+   / __ \___  / /_  (_)___ _____     <  /__ \
+  / / / / _ \/ __ \/ / __ `/ __ \    / /__/ /
+ / /_/ /  __/ /_/ / / /_/ / / / /   / // __/
+/_____/\___/_.___/_/\__,_/_/ /_/   /_//____/
 
 EOF
 }
@@ -20,10 +20,7 @@ header_info
 echo -e "\n Loading..."
 GEN_MAC=02:$(openssl rand -hex 5 | awk '{print toupper($0)}' | sed 's/\(..\)/\1:/g; s/.$//')
 NEXTID=$(pvesh get /cluster/nextid)
-VERSIONS=(stable beta dev)
-for version in "${VERSIONS[@]}"; do
-  eval "$version=$(curl -s https://raw.githubusercontent.com/home-assistant/version/master/$version.json | grep "ova" | cut -d '"' -f 4)"
-done
+
 YW=$(echo "\033[33m")
 BL=$(echo "\033[36m")
 HA=$(echo "\033[1;34m")
@@ -37,7 +34,7 @@ HOLD="-"
 CM="${GN}✓${CL}"
 CROSS="${RD}✗${CL}"
 THIN="discard=on,ssd=1,"
-set -Eeuo pipefail
+set -e
 trap 'error_handler $LINENO "$BASH_COMMAND"' ERR
 trap cleanup EXIT
 function error_handler() {
@@ -63,7 +60,7 @@ function cleanup() {
 
 TEMP_DIR=$(mktemp -d)
 pushd $TEMP_DIR >/dev/null
-if whiptail --backtitle "Proxmox VE Helper Scripts" --title "HOME ASSISTANT OS VM" --yesno "This will create a New Home Assistant OS VM. Proceed?" 10 58; then
+if whiptail --backtitle "Proxmox VE Helper Scripts" --title "Debian 12 VM" --yesno "This will create a New Debian 12 VM. Proceed?" 10 58; then
   :
 else
   header_info && echo -e "⚠ User exited script \n" && exit
@@ -133,47 +130,35 @@ function exit-script() {
 }
 
 function default_settings() {
-  BRANCH="$stable"
   VMID="$NEXTID"
   FORMAT=",efitype=4m"
   MACHINE=""
-  DISK_CACHE="cache=writethrough,"
-  HN="haos$stable"
-  CPU_TYPE=" -cpu host"
+  DISK_CACHE=""
+  HN="debian"
+  CPU_TYPE=""
   CORE_COUNT="2"
-  RAM_SIZE="4096"
+  RAM_SIZE="2048"
   BRG="vmbr0"
   MAC="$GEN_MAC"
   VLAN=""
   MTU=""
   START_VM="yes"
-  echo -e "${DGN}Using HAOS Version: ${BGN}${BRANCH}${CL}"
   echo -e "${DGN}Using Virtual Machine ID: ${BGN}${VMID}${CL}"
   echo -e "${DGN}Using Machine Type: ${BGN}i440fx${CL}"
-  echo -e "${DGN}Using Disk Cache: ${BGN}Write Through${CL}"
+  echo -e "${DGN}Using Disk Cache: ${BGN}None${CL}"
   echo -e "${DGN}Using Hostname: ${BGN}${HN}${CL}"
-  echo -e "${DGN}Using CPU Model: ${BGN}Host${CL}"
+  echo -e "${DGN}Using CPU Model: ${BGN}KVM64${CL}"
   echo -e "${DGN}Allocated Cores: ${BGN}${CORE_COUNT}${CL}"
   echo -e "${DGN}Allocated RAM: ${BGN}${RAM_SIZE}${CL}"
   echo -e "${DGN}Using Bridge: ${BGN}${BRG}${CL}"
   echo -e "${DGN}Using MAC Address: ${BGN}${MAC}${CL}"
   echo -e "${DGN}Using VLAN: ${BGN}Default${CL}"
   echo -e "${DGN}Using Interface MTU Size: ${BGN}Default${CL}"
-  echo -e "${DGN}Start VM when completed: ${BGN}yes${CL}"
-  echo -e "${BL}Creating a HAOS VM using the above default settings${CL}"
+  echo -e "${DGN}Start VM when completed: ${BGN}no${CL}"
+  echo -e "${BL}Creating a Debian 12 VM using the above default settings${CL}"
 }
 
 function advanced_settings() {
-  if BRANCH=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "HAOS VERSION" --radiolist "Choose Version" --cancel-button Exit-Script 10 58 3 \
-    "$stable" "Stable  " ON \
-    "$beta" "Beta  " OFF \
-    "$dev" "Dev  " OFF \
-    3>&1 1>&2 2>&3); then
-    echo -e "${DGN}Using HAOS Version: ${BGN}$BRANCH${CL}"
-  else
-    exit-script
-  fi
-
   while true; do
     if VMID=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Virtual Machine ID" 8 58 $NEXTID --title "VIRTUAL MACHINE ID" --cancel-button Exit-Script 3>&1 1>&2 2>&3); then
       if [ -z "$VMID" ]; then
@@ -208,11 +193,11 @@ function advanced_settings() {
     exit-script
   fi
 
-  if DISK_CACHE1=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "DISK CACHE" --radiolist "Choose" --cancel-button Exit-Script 10 58 2 \
-    "0" "None" OFF \
-    "1" "Write Through (Default)" ON \
+  if DISK_CACHE=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "DISK CACHE" --radiolist "Choose" --cancel-button Exit-Script 10 58 2 \
+    "0" "None (Default)" ON \
+    "1" "Write Through" OFF \
     3>&1 1>&2 2>&3); then
-    if [ $DISK_CACHE1 = "1" ]; then
+    if [ $DISK_CACHE = "1" ]; then
       echo -e "${DGN}Using Disk Cache: ${BGN}Write Through${CL}"
       DISK_CACHE="cache=writethrough,"
     else
@@ -223,9 +208,9 @@ function advanced_settings() {
     exit-script
   fi
 
-  if VM_NAME=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Hostname" 8 58 haos${BRANCH} --title "HOSTNAME" --cancel-button Exit-Script 3>&1 1>&2 2>&3); then
+  if VM_NAME=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Hostname" 8 58 debian --title "HOSTNAME" --cancel-button Exit-Script 3>&1 1>&2 2>&3); then
     if [ -z $VM_NAME ]; then
-      HN="haos${BRANCH}"
+      HN="debian"
       echo -e "${DGN}Using Hostname: ${BGN}$HN${CL}"
     else
       HN=$(echo ${VM_NAME,,} | tr -d ' ')
@@ -236,8 +221,8 @@ function advanced_settings() {
   fi
 
   if CPU_TYPE1=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "CPU MODEL" --radiolist "Choose" --cancel-button Exit-Script 10 58 2 \
-    "0" "KVM64" OFF \
-    "1" "Host (Default)" ON \
+    "0" "KVM64 (Default)" ON \
+    "1" "Host" OFF \
     3>&1 1>&2 2>&3); then
     if [ $CPU_TYPE1 = "1" ]; then
       echo -e "${DGN}Using CPU Model: ${BGN}Host${CL}"
@@ -261,9 +246,9 @@ function advanced_settings() {
     exit-script
   fi
 
-  if RAM_SIZE=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Allocate RAM in MiB" 8 58 4096 --title "RAM" --cancel-button Exit-Script 3>&1 1>&2 2>&3); then
+  if RAM_SIZE=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Allocate RAM in MiB" 8 58 2048 --title "RAM" --cancel-button Exit-Script 3>&1 1>&2 2>&3); then
     if [ -z $RAM_SIZE ]; then
-      RAM_SIZE="4096"
+      RAM_SIZE="2048"
       echo -e "${DGN}Allocated RAM: ${BGN}$RAM_SIZE${CL}"
     else
       echo -e "${DGN}Allocated RAM: ${BGN}$RAM_SIZE${CL}"
@@ -329,8 +314,8 @@ function advanced_settings() {
     START_VM="no"
   fi
 
-  if (whiptail --backtitle "Proxmox VE Helper Scripts" --title "ADVANCED SETTINGS COMPLETE" --yesno "Ready to create HAOS ${BRANCH} VM?" --no-button Do-Over 10 58); then
-    echo -e "${RD}Creating a HAOS VM using the above advanced settings${CL}"
+  if (whiptail --backtitle "Proxmox VE Helper Scripts" --title "ADVANCED SETTINGS COMPLETE" --yesno "Ready to create a Debian 12 VM?" --no-button Do-Over 10 58); then
+    echo -e "${RD}Creating a Debian 12 VM using the above advanced settings${CL}"
   else
     header_info
     echo -e "${RD}Using Advanced Settings${CL}"
@@ -384,26 +369,21 @@ else
 fi
 msg_ok "Using ${CL}${BL}$STORAGE${CL} ${GN}for Storage Location."
 msg_ok "Virtual Machine ID is ${CL}${BL}$VMID${CL}."
-msg_info "Retrieving the URL for Home Assistant ${BRANCH} Disk Image"
-if [ "$BRANCH" == "$dev" ]; then
-  URL=https://os-artifacts.home-assistant.io/${BRANCH}/haos_ova-${BRANCH}.qcow2.xz
-else
-  URL=https://github.com/home-assistant/operating-system/releases/download/${BRANCH}/haos_ova-${BRANCH}.qcow2.xz
-fi
+msg_info "Retrieving the URL for the Debian 12 Qcow2 Disk Image"
+URL=https://cloud.debian.org/images/cloud/bookworm/20231013-1532/debian-12-nocloud-amd64-20231013-1532.qcow2
 sleep 2
 msg_ok "${CL}${BL}${URL}${CL}"
 wget -q --show-progress $URL
 echo -en "\e[1A\e[0K"
 FILE=$(basename $URL)
-msg_ok "Downloaded ${CL}${BL}haos_ova-${BRANCH}.qcow2.xz${CL}"
-msg_info "Extracting KVM Disk Image"
-unxz $FILE
+msg_ok "Downloaded ${CL}${BL}${FILE}${CL}"
+
 STORAGE_TYPE=$(pvesm status -storage $STORAGE | awk 'NR>1 {print $2}')
 case $STORAGE_TYPE in
 nfs | dir)
-  DISK_EXT=".raw"
+  DISK_EXT=".qcow2"
   DISK_REF="$VMID/"
-  DISK_IMPORT="-format raw"
+  DISK_IMPORT="-format qcow2"
   THIN=""
   ;;
 btrfs)
@@ -419,23 +399,23 @@ for i in {0,1}; do
   eval DISK${i}=vm-${VMID}-disk-${i}${DISK_EXT:-}
   eval DISK${i}_REF=${STORAGE}:${DISK_REF:-}${!disk}
 done
-msg_ok "Extracted KVM Disk Image"
-msg_info "Creating HAOS VM"
+
+msg_info "Creating a Debian 12 VM"
 qm create $VMID -agent 1${MACHINE} -tablet 0 -localtime 1 -bios ovmf${CPU_TYPE} -cores $CORE_COUNT -memory $RAM_SIZE \
   -name $HN -tags proxmox-helper-scripts -net0 virtio,bridge=$BRG,macaddr=$MAC$VLAN$MTU -onboot 1 -ostype l26 -scsihw virtio-scsi-pci
 pvesm alloc $STORAGE $VMID $DISK0 4M 1>&/dev/null
-qm importdisk $VMID ${FILE%.*} $STORAGE ${DISK_IMPORT:-} 1>&/dev/null
+qm importdisk $VMID ${FILE} $STORAGE ${DISK_IMPORT:-} 1>&/dev/null
 qm set $VMID \
   -efidisk0 ${DISK0_REF}${FORMAT} \
-  -scsi0 ${DISK1_REF},${DISK_CACHE}${THIN}size=32G \
+  -scsi0 ${DISK1_REF},${DISK_CACHE}${THIN}size=2G \
   -boot order=scsi0 \
-  -description "# Home Assistant OS
+  -description "# Debian 12 VM
 ### https://github.com/tteck/Proxmox
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D7EP4GF)" >/dev/null
-msg_ok "Created HAOS VM ${CL}${BL}(${HN})"
+msg_ok "Created a Debian 12 VM ${CL}${BL}(${HN})"
 if [ "$START_VM" == "yes" ]; then
-  msg_info "Starting Home Assistant OS VM"
+  msg_info "Starting Debian 12 VM"
   qm start $VMID
-  msg_ok "Started Home Assistant OS VM"
+  msg_ok "Started Debian 12 VM"
 fi
 msg_ok "Completed Successfully!\n"

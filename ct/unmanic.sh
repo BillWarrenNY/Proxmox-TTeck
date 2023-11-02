@@ -8,18 +8,17 @@ source <(curl -s https://raw.githubusercontent.com/tteck/Proxmox/main/misc/build
 function header_info {
 clear
 cat <<"EOF"
-    ____       __               
-   / __ \___  / /_  ______ ____ 
-  / / / / _ \/ / / / / __ `/ _ \
- / /_/ /  __/ / /_/ / /_/ /  __/
-/_____/\___/_/\__,_/\__, /\___/ 
-                   /____/       
- 
+   __  __                            _
+  / / / /___  ____ ___  ____ _____  (_)____
+ / / / / __ \/ __ `__ \/ __ `/ __ \/ / ___/
+/ /_/ / / / / / / / / / /_/ / / / / / /__
+\____/_/ /_/_/ /_/ /_/\__,_/_/ /_/_/\___/
+
 EOF
 }
 header_info
 echo -e "Loading..."
-APP="Deluge"
+APP="Unmanic"
 var_disk="4"
 var_cpu="2"
 var_ram="2048"
@@ -30,7 +29,7 @@ color
 catch_errors
 
 function default_settings() {
-  CT_TYPE="1"
+  CT_TYPE="0"
   PW=""
   CT_ID=$NEXTID
   HN=$NSAPP
@@ -53,10 +52,10 @@ function default_settings() {
 
 function update_script() {
 header_info
-if [[ ! -f /etc/systemd/system/deluged.service ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
+if [[ ! -f /etc/systemd/system/unmanic.service ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
 msg_info "Updating $APP LXC"
-apt-get update &>/dev/null
-pip3 install deluge[all] --upgrade
+pip3 install -U unmanic &>/dev/null
+apt-get -y upgrade &>/dev/null
 msg_ok "Updated $APP LXC"
 exit
 }
@@ -67,4 +66,4 @@ description
 
 msg_ok "Completed Successfully!\n"
 echo -e "${APP} should be reachable by going to the following URL.
-         ${BL}http://${IP}:8112${CL} \n"
+         ${BL}http://${IP}:8888${CL} \n"

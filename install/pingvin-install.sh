@@ -17,7 +17,7 @@ msg_info "Installing Dependencies"
 $STD apt-get install -y curl
 $STD apt-get install -y sudo
 $STD apt-get install -y mc
-$STD apt-get install -y ca-certificates
+$STD apt-get install -y git
 $STD apt-get install -y gnupg
 msg_ok "Installed Dependencies"
 
@@ -30,14 +30,24 @@ msg_ok "Set up Node.js Repository"
 msg_info "Installing Node.js"
 $STD apt-get update
 $STD apt-get install -y nodejs
+$STD npm install pm2 -g
 msg_ok "Installed Node.js"
 
-msg_info "Installing MeshCentral"
-mkdir /opt/meshcentral
-cd /opt/meshcentral
-$STD npm install meshcentral
-$STD node node_modules/meshcentral --install
-msg_ok "Installed MeshCentral"
+msg_info "Installing Pingvin Share (Patience)"
+git clone -q https://github.com/stonith404/pingvin-share /opt/pingvin-share
+cd /opt/pingvin-share
+$STD git fetch --tags
+$STD git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
+cd backend
+$STD npm install
+$STD npm run build
+$STD pm2 start --name="pingvin-share-backend" npm -- run prod
+cd ../frontend
+$STD npm install
+$STD npm run build
+$STD pm2 start --name="pingvin-share-frontend" npm -- run start
+$STD pm2 startup
+msg_ok "Installed Pingvin Share"
 
 motd_ssh
 customize

@@ -8,21 +8,20 @@ source <(curl -s https://raw.githubusercontent.com/tteck/Proxmox/main/misc/build
 function header_info {
 clear
 cat <<"EOF"
-    ____       __               
-   / __ \___  / /_  ______ ____ 
-  / / / / _ \/ / / / / __ `/ _ \
- / /_/ /  __/ / /_/ / /_/ /  __/
-/_____/\___/_/\__,_/\__, /\___/ 
-                   /____/       
- 
+  ______                           ___       __          _ 
+ /_  __/___ __________ ___  ____  /   | ____/ /___ ___  (_)___
+  / / / __ `/ ___/ __ `__ \/ __ \/ /| |/ __  / __ `__ \/ / __ \
+ / / / /_/ (__  ) / / / / / /_/ / ___ / /_/ / / / / / / / / / /
+/_/  \__,_/____/_/ /_/ /_/\____/_/  |_\__,_/_/ /_/ /_/_/_/ /_/
+
 EOF
 }
 header_info
 echo -e "Loading..."
-APP="Deluge"
-var_disk="4"
-var_cpu="2"
-var_ram="2048"
+APP="TasmoAdmin"
+var_disk="2"
+var_cpu="1"
+var_ram="512"
 var_os="debian"
 var_version="12"
 variables
@@ -53,10 +52,10 @@ function default_settings() {
 
 function update_script() {
 header_info
-if [[ ! -f /etc/systemd/system/deluged.service ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
+if [[ ! -d /var ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
 msg_info "Updating $APP LXC"
 apt-get update &>/dev/null
-pip3 install deluge[all] --upgrade
+apt-get -y upgrade &>/dev/null
 msg_ok "Updated $APP LXC"
 exit
 }
@@ -67,4 +66,4 @@ description
 
 msg_ok "Completed Successfully!\n"
 echo -e "${APP} should be reachable by going to the following URL.
-         ${BL}http://${IP}:8112${CL} \n"
+         ${BL}http://${IP}:9999${CL} \n"

@@ -8,22 +8,22 @@ source <(curl -s https://raw.githubusercontent.com/tteck/Proxmox/main/misc/build
 function header_info {
 clear
 cat <<"EOF"
-    ____                            
-   / __ \___ _   ____  ______  ____ 
-  / / / / _ \ | / / / / / __ `/ __ \
- / /_/ /  __/ |/ / /_/ / /_/ / / / /
-/_____/\___/|___/\__,_/\__,_/_/ /_/ 
-                                    
+   ____                                 __
+  / __ \_      ______  _________ ______/ /_
+ / / / / | /| / / __ \/ ___/ __ `/ ___/ __/
+/ /_/ /| |/ |/ / / / / /__/ /_/ (__  ) /_
+\____/ |__/|__/_/ /_/\___/\__,_/____/\__/
+
 EOF
 }
 header_info
 echo -e "Loading..."
-APP="Devuan"
+APP="Owncast"
 var_disk="2"
-var_cpu="1"
-var_ram="512"
-var_os="devuan"
-var_version="4.0"
+var_cpu="2"
+var_ram="2048"
+var_os="debian"
+var_version="12"
 variables
 color
 catch_errors
@@ -52,7 +52,7 @@ function default_settings() {
 
 function update_script() {
 header_info
-if [[ ! -d /var ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
+if [[ ! -d /opt/owncast ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
 msg_info "Updating $APP LXC"
 apt-get update &>/dev/null
 apt-get -y upgrade &>/dev/null
@@ -65,3 +65,6 @@ build_container
 description
 
 msg_ok "Completed Successfully!\n"
+echo -e "${APP} should be reachable by going to the following URL.
+             ${BL}http://${IP}:8080${CL}
+             ${BL}http://${IP}:8080/admin${CL} admin|abc123\n"

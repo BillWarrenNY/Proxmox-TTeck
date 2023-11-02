@@ -30,8 +30,8 @@ $STD apt-get -y install zulu8-jdk
 msg_ok "Installed Azul Zulu"
 
 msg_info "Installing MongoDB"
-wget -qL http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.19_amd64.deb
-$STD dpkg -i libssl1.1_1.1.1f-1ubuntu2.19_amd64.deb
+wget -qL http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.20_amd64.deb
+$STD dpkg -i libssl1.1_1.1.1f-1ubuntu2.20_amd64.deb
 wget -qL https://repo.mongodb.org/apt/ubuntu/dists/bionic/mongodb-org/3.6/multiverse/binary-amd64/mongodb-org-server_3.6.23_amd64.deb
 $STD dpkg -i mongodb-org-server_3.6.23_amd64.deb
 msg_ok "Installed MongoDB"
@@ -42,15 +42,13 @@ latest_version=$(basename "$latest_url" | sed -e 's/.*ller_//;s/_Li.*//')
 msg_info "Installing Omada Controller ${latest_version}"
 wget -qL ${latest_url}
 $STD dpkg -i Omada_SDN_Controller_${latest_version}_Linux_x64.deb
-echo "bash -c \"\$(wget -qLO - https://github.com/tteck/Proxmox/raw/main/ct/${app}.sh)\"" >/usr/bin/update
-chmod +x /usr/bin/update
 msg_ok "Installed Omada Controller ${latest_version}"
 
 motd_ssh
 customize
 
 msg_info "Cleaning up"
-rm -rf Omada_SDN_Controller_${latest_version}_Linux_x64.deb mongodb-org-server_3.6.23_amd64.deb zulu-repo_1.0.0-3_all.deb libssl1.1_1.1.1f-1ubuntu2.19_amd64.deb
+rm -rf Omada_SDN_Controller_${latest_version}_Linux_x64.deb mongodb-org-server_3.6.23_amd64.deb zulu-repo_1.0.0-3_all.deb libssl1.1_1.1.1f-1ubuntu2.20_amd64.deb
 $STD apt-get autoremove
 $STD apt-get autoclean
 msg_ok "Cleaned"
